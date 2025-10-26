@@ -7,6 +7,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write  # allows Prettier auto-fix commits
+
 jobs:
   quality-checks:
     runs-on: ubuntu-latest
@@ -15,6 +18,8 @@ jobs:
       # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # 2️⃣ Setup Node.js
       - name: Setup Node.js
@@ -26,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: npm ci || npm install
 
-      # 4️⃣ Type check (if project uses TypeScript or checkJs)
+      # 4️⃣ TypeScript type check (if applicable)
       - name: Run TypeScript type check
         run: |
           if [ -f "tsconfig.json" ]; then
@@ -36,35 +41,43 @@ jobs:
             echo "No tsconfig.json found, skipping type check."
           fi
 
-      # 5️⃣ Prettier formatting check
-      - name: Check code formatting with Prettier
+      # 5️⃣ Prettier auto-fix and commit back
+      - name: Run Prettier auto-fix
         run: |
-          echo "Checking code formatting..."
-          npx prettier --check "**/*.{js,jsx,ts,tsx,json,css,md}" || (
-            echo "❌ Formatting issues detected! Please run: npx prettier --write ." && exit 1
-          )
+          echo "Running Prettier auto-fix..."
+          npx prettier --write "**/*.{js,jsx,ts,tsx,json,css,md}"
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Prettier fixed some files, committing changes..."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "style: auto-format code with Prettier [skip ci]" || echo "No changes to commit"
+            git push
+          else
+            echo "No formatting issues found."
+          fi
 
-      # 6️⃣ Linting with ESLint
+      # 6️⃣ Linting
       - name: Run ESLint analysis
         run: |
           echo "Running ESLint..."
           npm run lint --if-present
 
-      # 7️⃣ Run tests with coverage enforcement
-      - name: Run Jest tests with coverage gate
+      # 7️⃣ Tests with coverage enforcement
+      - name: Run Jest tests with coverage
         env:
           CI: true
         run: |
           echo "Running Jest tests..."
           npm test -- --coverage --coverageThreshold='{"global":{"branches":80,"functions":80,"lines":80,"statements":80}}'
 
-      # 8️⃣ Run security audit (fail on high or critical)
-      - name: Run security vulnerability scan
+      # 8️⃣ Security vulnerability audit
+      - name: Run npm security audit
         run: |
-          echo "Running npm audit..."
+          echo "Running npm audit for vulnerabilities..."
           npm audit --audit-level=high
 
-      # 9️⃣ Dependency review (PRs only)
+      # 9️⃣ Dependency review (only for PRs)
       - name: Dependency change review
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/dependency-review-action@v4
@@ -72,12 +85,12 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: true
 
-      # 🔟 Optional static security linting (if eslint-plugin-security installed)
-      - name: Security static analysis (optional)
+      # 🔟 Optional static security analysis
+      - name: Run ESLint security plugin (optional)
         run: |
           if npm ls eslint-plugin-security > /dev/null 2>&1; then
-            echo "Running ESLint security plugin..."
+            echo "Running security linting..."
             npx eslint . --ext .js,.ts --plugin security
           else
-            echo "eslint-plugin-security not found, skipping static security scan."
+            echo "eslint-plugin-security not installed, skipping static security analysis."
           fi
