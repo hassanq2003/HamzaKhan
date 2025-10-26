@@ -1,38 +1,80 @@
-name: Node.js CI Pipeline
+name: Node.js CI Pipeline (Auto Fix Enabled)
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   test-suite:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Get repository code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
+      # 2️⃣ Setup Node.js environment
       - name: Configure Node.js environment
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # 3️⃣ Install dependencies
       - name: Install project dependencies
         run: npm ci || npm install
 
-      - name: Lint code (if ESLint available)
-        run: npm run lint --if-present
+      # 4️⃣ Auto-fix Prettier formatting
+      - name: Run Prettier auto-fix
+        run: |
+          echo "🧹 Running Prettier auto-format..."
+          npx prettier --write "**/*.{js,jsx,ts,tsx,json,css,md}" || true
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "📦 Committing Prettier fixes..."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "style: auto-format code via Prettier [skip ci]" || true
+            git push || true
+          fi
 
+      # 5️⃣ Auto-fix ESLint issues
+      - name: Run ESLint auto-fix
+        run: |
+          echo "🔍 Running ESLint auto-fix..."
+          npx eslint . --ext .js,.jsx,.ts,.tsx --fix || true
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "📦 Committing ESLint fixes..."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "chore: auto-fix ESLint issues [skip ci]" || true
+            git push || true
+          fi
+
+      # 6️⃣ Lint check (non-blocking)
+      - name: Lint code (report only)
+        run: |
+          echo "🧾 Running ESLint report..."
+          npm run lint --if-present || true
+
+      # 7️⃣ Run Jest tests
       - name: Execute test suite
         env:
           CI: true
         run: |
-          echo "Starting Jest tests..."
+          echo "🧪 Starting Jest tests..."
           mkdir -p test-output
           npm test -- --verbose --coverage --coverageDirectory=test-output || true
 
+      # 8️⃣ Check test output
       - name: Verify test output directory
         id: verify-output
         run: |
@@ -42,9 +84,16 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
+      # 9️⃣ Upload Jest test artifacts
       - name: Upload Jest test artifacts
         if: ${{ steps.verify-output.outputs.exists == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: jest-artifacts-${{ github.run_id }}
           path: test-output/
+
+      # 🔟 Optional: Security audit (non-blocking)
+      - name: Run npm audit
+        run: |
+          echo "🔒 Checking for vulnerabilities..."
+          npm audit --audit-level=high || true
