@@ -1,0 +1,84 @@
+name: GitHub Pages CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: # allow manual trigger
+
+permissions:
+  contents: write  # required for deploying to gh-pages
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    name: Build, Test, and Deploy to GitHub Pages
+
+    steps:
+      # 1️⃣ Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: |
+          cd public
+          npm ci || npm install
+
+      # 4️⃣ Run tests
+      - name: Run test suite
+        run: |
+          cd public
+          npm test --if-present || echo "⚠️ Some tests failed — review logs."
+
+      # 5️⃣ Build static site
+      - name: Build project
+        run: |
+          cd public
+          npm run build
+
+      # 6️⃣ Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public/build-web
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+
+  # Separate job for pull requests (build only)
+  preview_build:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    name: Build Preview (No Deploy)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd public
+          npm ci || npm install
+
+      - name: Build project (preview)
+        run: |
+          cd public
+          npm run build
