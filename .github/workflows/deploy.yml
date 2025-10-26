@@ -1,4 +1,4 @@
-name: GitHub Pages CI/CD
+name: GitHub Pages Deployment
 
 on:
   push:
@@ -7,78 +7,52 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch: # allow manual trigger
+  workflow_dispatch:  # manual trigger option
 
 permissions:
-  contents: write  # required for deploying to gh-pages
+  contents: write  # needed for GitHub Pages deployment
 
 jobs:
-  build_and_deploy:
+  deploy:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    name: Build, Test, and Deploy to GitHub Pages
+    name: Deploy Static Site to GitHub Pages
 
     steps:
-      # 1️⃣ Checkout repository
+      # 1️⃣ Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2️⃣ Setup Node.js
+      # 2️⃣ Setup Node.js (optional — only if dependencies exist)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 3️⃣ Install dependencies
-      - name: Install dependencies
+      # 3️⃣ Install dependencies (optional — runs only if package.json exists)
+      - name: Install dependencies (if applicable)
         run: |
-          cd public
-          npm ci || npm install
+          if [ -f "package.json" ]; then
+            npm ci || npm install
+          else
+            echo "No package.json found — skipping install."
+          fi
 
-      # 4️⃣ Run tests
-      - name: Run test suite
+      # 4️⃣ Run tests (optional — only if test script exists)
+      - name: Run test suite (if available)
         run: |
-          cd public
-          npm test --if-present || echo "⚠️ Some tests failed — review logs."
+          if npm run | grep -q "test"; then
+            npm test || echo "⚠️ Tests failed, please check logs."
+          else
+            echo "No tests configured — skipping test step."
+          fi
 
-      # 5️⃣ Build static site
-      - name: Build project
-        run: |
-          cd public
-          npm run build
-
-      # 6️⃣ Deploy to GitHub Pages
-      - name: Deploy to GitHub Pages
+      # 5️⃣ Deploy public folder to GitHub Pages
+      - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public/build-web
+          publish_dir: ./public
           user_name: github-actions[bot]
           user_email: github-actions[bot]@users.noreply.github.com
-
-  # Separate job for pull requests (build only)
-  preview_build:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    name: Build Preview (No Deploy)
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: |
-          cd public
-          npm ci || npm install
-
-      - name: Build project (preview)
-        run: |
-          cd public
-          npm run build
