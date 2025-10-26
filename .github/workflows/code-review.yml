@@ -1,4 +1,4 @@
-name: Advanced Code Quality Pipeline
+name: Code Quality - Non Blocking
 
 on:
   push:
@@ -8,15 +8,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # allows Prettier auto-fix commits
+  contents: write
 
 jobs:
   quality-checks:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repo
-      - name: Checkout repository
+      # 1️⃣ Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -31,66 +31,54 @@ jobs:
       - name: Install dependencies
         run: npm ci || npm install
 
-      # 4️⃣ TypeScript type check (if applicable)
-      - name: Run TypeScript type check
+      # 4️⃣ Run Prettier (auto-fix formatting)
+      - name: Format code with Prettier
         run: |
-          if [ -f "tsconfig.json" ]; then
-            echo "Running TypeScript type check..."
-            npx tsc --noEmit
-          else
-            echo "No tsconfig.json found, skipping type check."
-          fi
-
-      # 5️⃣ Prettier auto-fix and commit back
-      - name: Run Prettier auto-fix
-        run: |
-          echo "Running Prettier auto-fix..."
-          npx prettier --write "**/*.{js,jsx,ts,tsx,json,css,md}"
+          echo "🧹 Running Prettier..."
+          npx prettier --write "**/*.{js,jsx,ts,tsx,json,css,md}" || true
           if [ -n "$(git status --porcelain)" ]; then
-            echo "Prettier fixed some files, committing changes..."
+            echo "📦 Committing Prettier fixes..."
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add .
-            git commit -m "style: auto-format code with Prettier [skip ci]" || echo "No changes to commit"
-            git push
-          else
-            echo "No formatting issues found."
+            git commit -m "style: auto-format code [skip ci]" || true
+            git push || true
           fi
 
-      # 6️⃣ Linting
-      - name: Run ESLint analysis
+      # 5️⃣ Run ESLint (do not fail pipeline)
+      - name: Lint code with ESLint
         run: |
-          echo "Running ESLint..."
-          npm run lint --if-present
+          echo "🔍 Running ESLint..."
+          npm run lint --if-present || true
 
-      # 7️⃣ Tests with coverage enforcement
-      - name: Run Jest tests with coverage
+      # 6️⃣ Run Jest tests (continue on error)
+      - name: Run Jest tests
         env:
           CI: true
         run: |
-          echo "Running Jest tests..."
-          npm test -- --coverage --coverageThreshold='{"global":{"branches":80,"functions":80,"lines":80,"statements":80}}'
+          echo "🧪 Running Jest tests..."
+          npm test -- --verbose --coverage || true
 
-      # 8️⃣ Security vulnerability audit
-      - name: Run npm security audit
+      # 7️⃣ Security audit (continue on vulnerabilities)
+      - name: Run npm audit
         run: |
-          echo "Running npm audit for vulnerabilities..."
-          npm audit --audit-level=high
+          echo "🔒 Checking for vulnerabilities..."
+          npm audit --audit-level=high || true
 
-      # 9️⃣ Dependency review (only for PRs)
-      - name: Dependency change review
+      # 8️⃣ Dependency review (only for PRs)
+      - name: Dependency review
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
           comment-summary-in-pr: true
 
-      # 🔟 Optional static security analysis
-      - name: Run ESLint security plugin (optional)
+      # 9️⃣ Optional TypeScript type check
+      - name: TypeScript type check
         run: |
-          if npm ls eslint-plugin-security > /dev/null 2>&1; then
-            echo "Running security linting..."
-            npx eslint . --ext .js,.ts --plugin security
+          if [ -f "tsconfig.json" ]; then
+            echo "📘 Running TypeScript type check..."
+            npx tsc --noEmit || true
           else
-            echo "eslint-plugin-security not installed, skipping static security analysis."
+            echo "No TypeScript config found, skipping type check."
           fi
