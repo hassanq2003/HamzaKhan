@@ -159,7 +159,7 @@ describe("Satellite Module", () => {
   describe("getTable - Initial Setup", () => {
     test("should create directory if not exists", () => {
       const mockBody =
-        '<form><table class="standardTable"><tbody></tbody></table></form>';
+        "<form><table class=\"standardTable\"><tbody></tbody></table></form>";
 
       request.mockImplementation((options, callback) => {
         callback(null, { statusCode: 200 }, mockBody);
@@ -172,7 +172,7 @@ describe("Satellite Module", () => {
 
     test("should handle directory creation error", () => {
       const mockBody =
-        '<form><table class="standardTable"><tbody></tbody></table></form>';
+        "<form><table class=\"standardTable\"><tbody></tbody></table></form>";
       request.mockImplementation((options, callback) => {
         callback(null, { statusCode: 200 }, mockBody);
       });
@@ -235,7 +235,7 @@ describe("Satellite Module", () => {
         callback(
           null,
           { statusCode: 200 },
-          '<form><table class="standardTable"><tbody></tbody></table></form>',
+          "<form><table class=\"standardTable\"><tbody></tbody></table></form>",
         );
       });
 
