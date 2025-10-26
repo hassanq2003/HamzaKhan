@@ -1,4 +1,4 @@
-name: Continuous Integration - Custom Workflow
+name: Custom Workflow
 
 # Triggers: push, pull requests, or manual run
 on:
