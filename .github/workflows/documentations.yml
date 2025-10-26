@@ -1,0 +1,61 @@
+name: Publish Docusaurus Documentation
+
+on:
+  push:
+    branches:
+      - main   # Trigger on main branch updates
+    paths:
+      - 'my-docs/docs/**'
+      - 'my-docs/docusaurus.config.js'
+      - 'my-docs/package.json'
+      - '.github/workflows/docs-deploy.yml'
+
+  # Allow manual runs
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    name: Build and Deploy Docs
+
+    steps:
+      # Step 1: Retrieve source code
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for gh-pages history
+
+      # Step 2: Prepare Node.js environment
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Step 3: Install dependencies efficiently
+      - name: Install project dependencies
+        working-directory: my-docs
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "Lockfile detected — using npm ci"
+            npm ci
+          else
+            echo "No lockfile found — falling back to npm install"
+            npm install
+          fi
+
+      # Step 4: Build the Docusaurus static site
+      - name: Generate documentation build
+        working-directory: my-docs
+        run: npm run build
+
+      # Step 5: Publish the build to GitHub Pages
+      - name: Upload site to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: my-docs/build
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
