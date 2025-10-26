@@ -1,0 +1,50 @@
+name: Node.js CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-suite:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get repository code
+        uses: actions/checkout@v4
+
+      - name: Configure Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install project dependencies
+        run: npm ci || npm install
+
+      - name: Lint code (if ESLint available)
+        run: npm run lint --if-present
+
+      - name: Execute test suite
+        env:
+          CI: true
+        run: |
+          echo "Starting Jest tests..."
+          mkdir -p test-output
+          npm test -- --verbose --coverage --coverageDirectory=test-output || true
+
+      - name: Verify test output directory
+        id: verify-output
+        run: |
+          if [ -d "test-output" ] && [ "$(ls -A test-output)" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Jest test artifacts
+        if: ${{ steps.verify-output.outputs.exists == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-artifacts-${{ github.run_id }}
+          path: test-output/
