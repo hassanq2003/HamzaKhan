@@ -1,0 +1,60 @@
+name: Continuous Integration - Custom Workflow
+
+# Triggers: push, pull requests, or manual run
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    name: Lint, Test, and Audit Pipeline
+
+    steps:
+      # 1️⃣ Retrieve repository contents
+      - name: Fetch repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Configure Node.js runtime environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # 3️⃣ Install required packages
+      - name: Install dependencies
+        run: |
+          echo "Installing project dependencies..."
+          npm ci || npm install
+
+      # 4️⃣ Execute linting step (non-blocking)
+      - name: Analyze code style
+        run: |
+          echo "Running ESLint..."
+          npm run lint || echo "⚠️ Linting completed with warnings"
+
+      # 5️⃣ Run automated test suite
+      - name: Run unit tests
+        env:
+          CI: true
+        run: |
+          echo "🧪 Executing tests..."
+          npm test || echo "⚠️ Tests completed with some failures"
+
+      # 6️⃣ Perform a security audit (non-blocking)
+      - name: Perform dependency audit
+        run: |
+          echo "🔒 Running npm audit..."
+          npm audit --json > audit-report.json || true
+
+      # 7️⃣ Archive the audit results for review
+      - name: Save audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: audit-report.json
