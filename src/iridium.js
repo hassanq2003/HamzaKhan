@@ -40,9 +40,10 @@ function getTable(config) {
 
     if (!fs.existsSync(basedir)) fs.mkdirSync(basedir, { recursive: true });
 
-    const options = counter === 0
-      ? utils.get_options("IridiumFlares.aspx?")
-      : utils.post_options("IridiumFlares.aspx?", opt);
+    const options =
+      counter === 0
+        ? utils.get_options("IridiumFlares.aspx?")
+        : utils.post_options("IridiumFlares.aspx?", opt);
 
     request(options, async (error, response, body) => {
       if (error || response.statusCode !== 200) return reject(error);
@@ -54,7 +55,11 @@ function getTable(config) {
       tbody.find("tr").each((i, o) => {
         const temp = {};
         for (let j = 0; j < 6; j++) {
-          temp[eventsIridium[j]] = $(o).find("td").eq(j + 1).text().trim();
+          temp[eventsIridium[j]] = $(o)
+            .find("td")
+            .eq(j + 1)
+            .text()
+            .trim();
         }
         const href = $(o).find("td").eq(0).find("a").attr("href");
         temp.url = href
@@ -83,11 +88,18 @@ function getTable(config) {
               [11, 10],
               [12, 11],
             ].forEach(([index, row]) => {
-              temp[eventsIridium[index]] = tr.eq(row).find("td").eq(1).text().trim();
+              temp[eventsIridium[index]] = tr
+                .eq(row)
+                .find("td")
+                .eq(1)
+                .text()
+                .trim();
             });
 
             const imgSrc = $("#ctl00_cph1_imgSkyChart").attr("src");
-            if (imgSrc) temp[eventsIridium[13]] = "https://www.heavens-above.com/" + imgSrc;
+            if (imgSrc)
+              temp[eventsIridium[13]] =
+                "https://www.heavens-above.com/" + imgSrc;
 
             const id = utils.md5(Math.random().toString());
             temp[eventsIridium[14]] = id;
@@ -99,7 +111,9 @@ function getTable(config) {
               axios
                 .get(imgOpts.url, { responseType: "stream" })
                 .then((resStream) => {
-                  resStream.data.pipe(fs.createWriteStream(basedir + id + ".png", { flags: "a" }));
+                  resStream.data.pipe(
+                    fs.createWriteStream(basedir + id + ".png", { flags: "a" }),
+                  );
                 })
                 .catch(console.error);
             }

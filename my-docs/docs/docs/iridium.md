@@ -14,6 +14,7 @@ This script uses the following Node.js packages:
 - **utils.js** — local helper module providing reusable request configurations and utilities such as `md5`, `get_options`, and `image_options`.
 
 Install dependencies using:
+
 ```bash
 npm install axios cheerio
 ```
@@ -37,38 +38,54 @@ The module scrapes Iridium flare event data from `heavens-above.com`, extracts e
 ## 🧩 Key Components
 
 ### 1. `eventsIridium`
+
 An array defining the attributes collected for each flare event:
+
 ```js
 const eventsIridium = [
-  "brightness", "altitude", "azimuth", "satellite",
-  "distanceToFlareCentre", "brightnessAtFlareCentre",
-  "date", "time", "distanceToSatellite", "AngleOffFlareCentreLine",
-  "flareProducingAntenna", "sunAltitude", "angularSeparationFromSun",
-  "image", "id"
+  "brightness",
+  "altitude",
+  "azimuth",
+  "satellite",
+  "distanceToFlareCentre",
+  "brightnessAtFlareCentre",
+  "date",
+  "time",
+  "distanceToSatellite",
+  "AngleOffFlareCentreLine",
+  "flareProducingAntenna",
+  "sunAltitude",
+  "angularSeparationFromSun",
+  "image",
+  "id",
 ];
 ```
 
 ---
 
 ### 2. `request(options, callback)`
+
 A wrapper around `axios.get` to maintain a callback-based interface similar to the Node.js `request` library (deprecated).  
 Used internally by the module for all web requests.
 
 ---
 
 ### 3. `getTable(config)`
+
 The **main function** of the module.
 
 #### Parameters
-| Parameter | Type | Description |
-|------------|------|-------------|
-| `config.target` | `String` | Satellite target ID or name |
-| `config.root` | `String` | Root path for saving output files |
-| `config.counter` | `Number` | Page counter for multi-page scraping |
-| `config.opt` | `String` | POST request parameters |
-| `config.database` | `Array` | Accumulated results from previous calls |
+
+| Parameter         | Type     | Description                             |
+| ----------------- | -------- | --------------------------------------- |
+| `config.target`   | `String` | Satellite target ID or name             |
+| `config.root`     | `String` | Root path for saving output files       |
+| `config.counter`  | `Number` | Page counter for multi-page scraping    |
+| `config.opt`      | `String` | POST request parameters                 |
+| `config.database` | `Array`  | Accumulated results from previous calls |
 
 #### Behavior
+
 - Initializes the output directory (`IridiumFlares/`).
 - Loads flare listings from `IridiumFlares.aspx`.
 - Iterates through table rows to collect data.
@@ -76,6 +93,7 @@ The **main function** of the module.
 - Saves each entry’s HTML and image using a unique ID.
 
 Example output directory:
+
 ```
 IridiumFlares/
 ├── d41d8cd98f.html
@@ -84,14 +102,15 @@ IridiumFlares/
 ```
 
 #### Example Use
+
 ```js
-const { getTable } = require('./iridium');
+const { getTable } = require("./iridium");
 getTable({
-  root: './data/',
-  target: 'Iridium',
+  root: "./data/",
+  target: "Iridium",
   counter: 0,
-  pages: 1
-}).then(data => console.log('Flare Data:', data));
+  pages: 1,
+}).then((data) => console.log("Flare Data:", data));
 ```
 
 ---
@@ -99,6 +118,7 @@ getTable({
 ## 📁 File Output
 
 Each Iridium flare event produces:
+
 - `HTML` file — raw table content.
 - `PNG` image — sky chart view.
 - `index.json` (optional) — compiled list of flare data if extended.
@@ -106,6 +126,7 @@ Each Iridium flare event produces:
 ---
 
 ## 🧠 Notes
+
 - The `utils.js` module must exist in the same directory.
 - The script assumes consistent HTML structure on the `heavens-above.com` website.
 - Network or HTML structure changes may break scraping logic.
@@ -113,5 +134,6 @@ Each Iridium flare event produces:
 ---
 
 ## 🧾 License
+
 This script is for **educational and research purposes only**.  
 Data is sourced from [Heavens Above](https://www.heavens-above.com).

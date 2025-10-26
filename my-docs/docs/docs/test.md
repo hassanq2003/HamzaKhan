@@ -69,6 +69,7 @@ npm test
 ```
 
 This will:
+
 - Automatically detect `.test.js` or `.spec.js` files.
 - Run all test cases using Jest.
 - Display results in the terminal.
@@ -140,11 +141,11 @@ npx jest --clearCache
 
 ## 🧰 Troubleshooting
 
-| Issue | Solution |
-|-------|-----------|
-| **`jest: command not found`** | Run `npm install --save-dev jest` |
-| **Tests fail due to imports** | Check relative paths in `require('../src/utils')` |
-| **Mock not working** | Ensure `jest.mock()` is declared **before** the tests |
+| Issue                         | Solution                                              |
+| ----------------------------- | ----------------------------------------------------- |
+| **`jest: command not found`** | Run `npm install --save-dev jest`                     |
+| **Tests fail due to imports** | Check relative paths in `require('../src/utils')`     |
+| **Mock not working**          | Ensure `jest.mock()` is declared **before** the tests |
 
 ---
 

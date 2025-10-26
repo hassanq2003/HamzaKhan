@@ -9,8 +9,8 @@ This file defines the logic for fetching, parsing, scoring, and saving satellite
 ```js
 const request = require("request"); // For making HTTP requests
 const cheerio = require("cheerio"); // For parsing HTML (like jQuery for the backend)
-const fs = require("fs");           // For file operations
-const utils = require("./utils");   // Custom utility functions (see util.md)
+const fs = require("fs"); // For file operations
+const utils = require("./utils"); // Custom utility functions (see util.md)
 ```
 
 ---
@@ -30,19 +30,44 @@ The script automates the process of collecting satellite pass data. It:
 ## 🔧 Constants
 
 ### `property`
+
 An array of keys used to store satellite pass attributes.
+
 ```js
-["url", "date", "brightness", "events", "passType", "image", "scoreData", "exist", "score", "id"];
+[
+  "url",
+  "date",
+  "brightness",
+  "events",
+  "passType",
+  "image",
+  "scoreData",
+  "exist",
+  "score",
+  "id",
+];
 ```
 
 ### `events`
+
 Represents different phases of a satellite’s visibility.
+
 ```js
-["rise", "reachAltitude10deg", "highestPoint", "dropBelowAltitude10deg", "set", "exitShadow", "enterShadow"];
+[
+  "rise",
+  "reachAltitude10deg",
+  "highestPoint",
+  "dropBelowAltitude10deg",
+  "set",
+  "exitShadow",
+  "enterShadow",
+];
 ```
 
 ### `attribute`
+
 Describes data points collected for each event.
+
 ```js
 ["time", "altitude", "azimuth", "distance", "brightness", "sunAltitude"];
 ```
@@ -52,14 +77,18 @@ Describes data points collected for each event.
 ## ⚖️ Comparison & Weight System
 
 ### `compare`
+
 Contains comparison functions to sort satellite passes based on various factors:
+
 - Brightness (smaller is better)
 - Sun altitude (smaller is better)
 - Satellite altitude (higher is better)
 - Duration (longer is better)
 
 ### `weight`
+
 Defines importance for each comparison criterion.
+
 ```js
 [9.5, 6, 6.5, 6.5];
 ```
@@ -69,17 +98,19 @@ Defines importance for each comparison criterion.
 ## 🛰️ `getTable(config)` — Core Function
 
 ### Purpose
+
 Fetches and processes all satellite pass data pages for a given satellite.
 
 ### Parameters
-| Name | Type | Description |
-|------|------|-------------|
-| `config.target` | `number` | Satellite ID (used in URL). |
-| `config.pages` | `number` | Number of pages to fetch. |
-| `config.root` | `string` | Directory root to save data. |
-| `config.counter` | `number` | Internal counter for recursion. |
-| `config.opt` | `string` | POST data for pagination. |
-| `config.database` | `Array` | Accumulated satellite data. |
+
+| Name              | Type     | Description                     |
+| ----------------- | -------- | ------------------------------- |
+| `config.target`   | `number` | Satellite ID (used in URL).     |
+| `config.pages`    | `number` | Number of pages to fetch.       |
+| `config.root`     | `string` | Directory root to save data.    |
+| `config.counter`  | `number` | Internal counter for recursion. |
+| `config.opt`      | `string` | POST data for pagination.       |
+| `config.database` | `Array`  | Accumulated satellite data.     |
 
 ---
 
@@ -119,11 +150,11 @@ Fetches and processes all satellite pass data pages for a given satellite.
 
 All results are stored in a folder named like `satellite12345/`:
 
-| File | Description |
-|-------|--------------|
-| `index.json` | All pass data, sorted by score |
-| `<id>.html` | The parsed HTML table for each pass |
-| `<id>.png` | The visibility finder image |
+| File         | Description                         |
+| ------------ | ----------------------------------- |
+| `index.json` | All pass data, sorted by score      |
+| `<id>.html`  | The parsed HTML table for each pass |
+| `<id>.png`   | The visibility finder image         |
 
 ---
 
@@ -133,10 +164,10 @@ All results are stored in a folder named like `satellite12345/`:
 const satellite = require("./satellite");
 
 satellite.getTable({
-  target: 25544,       // ISS (International Space Station)
-  pages: 3,            // Fetch 3 pages of data
-  root: "./data/",     // Save results in ./data/
-  counter: 0           // Start from page 0
+  target: 25544, // ISS (International Space Station)
+  pages: 3, // Fetch 3 pages of data
+  root: "./data/", // Save results in ./data/
+  counter: 0, // Start from page 0
 });
 ```
 

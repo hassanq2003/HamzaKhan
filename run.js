@@ -10,13 +10,13 @@ async function run() {
     await satellite.getTable({
       target: 25544, // ISS
       pages: 4,
-      root: "./public/data/"
+      root: "./public/data/",
     });
 
     console.log("Fetching Iridium flares...");
     await iridium.getTable({
       pages: 4,
-      root: "./public/data/"
+      root: "./public/data/",
     });
 
     console.log("All data fetched and saved successfully!");
