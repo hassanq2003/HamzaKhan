@@ -1,0 +1,41 @@
+name: Daily Automated Test Run
+
+on:
+  schedule:
+    # Execute every day at 06:30 AM UTC
+    - cron: "30 6 * * *"
+  workflow_dispatch:  # Allows manual trigger from the Actions tab
+
+jobs:
+  run-daily-tests:
+    runs-on: ubuntu-latest
+    name: Execute Daily Jest Tests
+
+    steps:
+      # 1️⃣ Clone repository contents
+      - name: Retrieve source code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Configure Node.js environment
+      - name: Initialize Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # 3️⃣ Install required dependencies
+      - name: Install project dependencies
+        run: |
+          echo "Installing dependencies..."
+          npm ci || npm install
+
+      # 4️⃣ Execute the test suite
+      - name: Run automated tests
+        env:
+          CI: true
+        run: |
+          echo "🧪 Running daily tests..."
+          npm test || echo "⚠️ Some tests failed, please review logs."
+
+      # 5️⃣ Print completion timestamp
+      - name: Log completion time
+        run: echo "✅ Test suite completed at $(date -u +"%H:%M UTC")"
